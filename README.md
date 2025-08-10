@@ -13,3 +13,5 @@ For best comptability use a 3rd party browser like chrome or FireFox for now.
 
 Current Version 0.8
 
+hosted at www.reportbuddy.org
+
