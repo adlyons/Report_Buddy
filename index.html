@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Report Buddy V0.8</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    html,body{margin:0;padding:0;height:100%;background:#000;color:#fff;font-family:sans-serif;overscroll-behavior:none}
+    #app{position:relative;width:100vw;height:100vh;overflow:visible}
+    #reportbuddy{position:absolute;top:0.3%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.5);padding:.1rem .3rem;border-radius:2px;font-size:.65rem;line-height:1.25;z-index:100}
+
+    #videoContainer{position:relative;width:100%;height:100%;overflow:hidden}
+
+    #video{width:100%;height:100%;object-fit:cover}
+
+    #map{position:absolute;bottom:3.5rem;right:.2rem;width:30vw;height:20vh;min-width:120px;min-height:100px;border:2px solid #fff;border-radius:8px;overflow:hidden;z-index:20}
+
+    #geoInfo{position:absolute;bottom:1vh;left:1rem;background:rgba(0,0,0,.6);padding:.4rem .6rem;border-radius:8px;font-size:.85rem;line-height:1.25;z-index:20;pointer-events:none;max-width:95vw}
+
+    #eventSelector{position:absolute;top:5%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:.5rem 1rem;border-radius:10px;z-index:25;font-size:1.45rem;font-weight:bold;text-align:center; white-space: nowrap; overflow: visible; text-overflow: ellipsis; max-width: 100%;}
+
+    #eventSelector select{background:transparent;color:#fff;font-size:1.4rem;border:none;outline:none;appearance:none max-width: 90vw; text-align: center; box-sizing: border-box; white-space: nowrap; overflow: visible; text-overflow: ellipsis;}
+
+    #hailSizeSelector{position:absolute;top:15%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:.5rem 1rem;border-radius:10px;z-index:25;font-size:1.25rem;font-weight:bold;text-align:center;display:none}
+
+    #hailSizeSelector select{background:transparent;color:#fff;font-size:1.25rem;border:none;outline:none;appearance:none}
+
+    #customHailInput{position:absolute;top:25%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);padding:.5rem 1rem;border-radius:10px;z-index:25;font-size:1.25rem;font-weight:bold;text-align:center;display:none}
+
+    #customHailInput input{background:transparent;color:#fff;font-size:1.25rem;border:1px solid #fff;border-radius:5px;outline:none;padding:.3rem .5rem;text-align:center;width:200px}
+
+    #zoomControls{position:absolute;bottom:30vh;right:.4rem;display:flex;flex-direction:row;gap:.4rem;z-index:25}
+
+    #zoomControls button{width:35px;height:35px;border:2px solid #fff;border-radius:6px;background:rgba(0,0,0,.6);color:#fff;font-size:1.2rem;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+
+    #zoomControls button:active{background:rgba(255,255,255,.3)}
+
+    #captureBtn{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);width:50px;height:50px;border:4px solid #fff;border-radius:50%;background:rgba(255,255,255,.2);z-index:25;cursor:pointer}
+
+    #captureBtn:active{background:rgba(255,255,255,.4)}
+
+    #snapshot{position:absolute;inset:0;background:rgba(0,0,0,.85);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:40}
+    #snapshot img{max-width:100%;max-height:90%;border:4px solid #fff;border-radius:8px}
+    #snapshot button{margin-top:1rem;padding:.5rem 1rem;font-size:1rem;border:none;border-radius:6px;background:#fff;cursor:pointer}
+    #loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:30}
+
+    #tweetPanel{position:fixed;top:0;right:-100vw;width:98vw;height:100vh;background:rgba(0,0,0,.95);color:#fff;z-index:100;display:flex;align-items:center;justify-content:center;transition:right .3s ease; box-sizing: border-box; padding: 1rem; }
+    #tweetPanel.open{right:0}
+    #tweetContent{text-align:center;max-width:88; vw box-sizing: border-box;}
+    #tweetText{width:88vw;height:30vh;font-size:1rem;padding:1rem;background:#111;color:#0f0;border:1px solid #888;border-radius:10px;resize:none;margin-bottom:1rem}
+    #tweetPanel button{padding:.5rem 1rem;font-size:1rem;background:#fff;color:#000;border:none;border-radius:5px;cursor:pointer}
+
+
+    #locationMapPanel {
+      position: fixed;
+      top: 0;
+      left: -100%;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: left 0.3s ease;
+    }
+    #locationMapPanel.open {
+      left: 0;
+    }
+
+
+    #locationMapContainer {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #locationMap {
+      height: 42%;
+      width: 100%;
+      background: #222;
+    }
+
+    #locationContent {
+      flex: 1;
+      padding: 0.5rem;
+      overflow-y: visible;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+
+
+
+
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="videoContainer"><video id="video" autoplay playsinline muted></video><div id="loader">Loading camera…</div></div>
+    <div id="map"></div>
+    <div id="zoomControls">
+      <button id="zoomOut">−</button>
+      <button id="zoomIn">+</button>
+    </div>
+    <div id="geoInfo">Locating…</div>
+    <div id="reportbuddy">Report Buddy v0.8</div>
+    <div id="eventSelector">
+      <label for="eventType"></label>
+      <select id="eventType">
+        <option value="">Select Report Type</option>
+        <option value="Tornado">Tornado</option>
+        <option value="Funnel Cloud">Funnel Cloud</option>
+        <option value="Wall Cloud">Wall Cloud</option>
+        <option value="Hail">Hail</option>
+        <option value="Damage">Damage</option>
+        <option value="Flooding">Flooding</option>
+        <option value="Wild Fire">Wild Fire</option>
+      </select>
+    </div>
+
+    <div id="hailSizeSelector">
+      <label for="hailSize">Size:</label>
+      <select id="hailSize">
+        <option value="">Select size</option>
+        <option>Pea (0.25″)</option>
+        <option>Nickel (0.88″)</option>
+        <option>Quarter (1.00″)</option>
+        <option>Half-Dollar (1.25″)</option>
+        <option>Ping Pong Ball (1.50″)</option>
+        <option>Golf Ball (1.75″)</option>
+        <option>Hen Egg (2.00″)</option>
+        <option>Pool Ball (2.25″)</option>
+        <option>Tennis Ball (2.50″)</option>
+        <option>Baseball (2.75″)</option>
+        <option>Apple (3.00″)</option>
+        <option>Softball (4.00″)</option>
+        <option>Grapefruit (4.50″)</option>
+        <option>DVD (5.00″)</option>
+        <option>Other (>5.00″) Describe in User Remark</option>
+      </select>
+    </div>
+
+    <div id="customHailInput">
+      <input type="text" id="customHailSize" placeholder="Describe hail size..." />
+    </div>
+
+    <button id="captureBtn" title="Capture Screen"></button>
+
+    <div id="snapshot"><img id="snapshotImg" alt="Captured"/><button id="closeSnap">Close</button></div>
+
+    <div id="tweetPanel">
+      <div id="tweetContent">
+        <h3>Share Report</h3>
+        <textarea id="tweetText" readonly></textarea>
+        <button onclick="copyTweet()">Copy Tweet</button>
+      </div>
+    </div>
+  </div>
+
+
+
+<div id="locationMapPanel">
+  <div id="locationMapContainer">
+    <div id="locationMap"></div>
+    <div id="locationContent">
+      <h3>Current Location Details</h3>
+      <p>Lat: <span id="locLat">--</span></p>
+      <p>Lon: <span id="locLon">--</span></p>
+      <p>City: <span id="locCity">--</span></p>
+      <p>State: <span id="locState">--</span></p>
+      <p>County: <span id="locCounty">--</span></p>
+      <p>WFO: <span id="locWFO">--</span></p>
+      <p>WFO X Handle: <span id="locWFOHandle">--</span></p>
+      <p>WFO Phone (Use with Caution): <span id="locWFOPhone">--</span></p>
+      <button onclick="closeLocationPanel()">Close</button>
+    </div>
+  </div>
+</div>
+
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+
+    const Version_ID ='V0.8';
+
+    let touchStartX = null;
+    let isPanelOpen = false;
+
+    function headingToCompass(deg){
+      if(deg==null||isNaN(deg))return'Unknown';
+      const dir=['N','NE','E','SE','S','SW','W','NW'];
+      return dir[Math.round(deg/45)%8];
+    }
+
+    function copyTweet(){
+      const t=document.getElementById('tweetText');
+      t.select();document.execCommand('copy');alert('Tweet copied!');
+    }
+
+    let tweetInfo={
+      event:'',size:'',customHailSize:'',city:'',state:'',county:'',lat:'',lon:'',wfo:'',timestamp:'',heading:null
+    };
+
+    let currentStream = null;
+    let currentZoom = 1;
+    const MIN_ZOOM = 1;
+    const MAX_ZOOM = 5;
+
+    async function startCamera(){
+
+      const VIDEO_CONSTRAINTS = {
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },   // Force HD width
+          height: { ideal: 1080 },  // Force HD height
+          frameRate: { ideal: 30, max: 60 }
+        },
+        audio: false
+      };
+
+      const loader=document.getElementById('loader');
+      try{
+        const stream=await navigator.mediaDevices.getUserMedia(VIDEO_CONSTRAINTS);
+        currentStream = stream;
+        const v=document.getElementById('video');
+        v.srcObject=stream;await v.play();
+        
+        // Check if zoom is supported
+        const track = stream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities();
+        if (capabilities.zoom) {
+          console.log('Camera zoom supported:', capabilities.zoom);
+        }
+      }catch(e){alert('Camera error: '+e.message);}
+      loader.style.display='none';
+    }
+
+    async function setZoom(zoomLevel) {
+      if (!currentStream) return;
+      
+      const track = currentStream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities();
+      
+      if (capabilities.zoom) {
+        const constraints = {
+          advanced: [{ zoom: zoomLevel }]
+        };
+        
+        try {
+          await track.applyConstraints(constraints);
+          currentZoom = zoomLevel;
+          console.log('Zoom set to:', zoomLevel);
+        } catch (e) {
+          console.warn('Failed to set zoom:', e);
+        }
+      } else {
+        // Fallback: use CSS transform zoom on video element
+        const video = document.getElementById('video');
+        video.style.transform = `scale(${zoomLevel})`;
+        currentZoom = zoomLevel;
+        console.log('Using CSS zoom:', zoomLevel);
+      }
+    }
+
+    function zoomIn() {
+      const newZoom = Math.min(currentZoom + 0.5, MAX_ZOOM);
+      setZoom(newZoom);
+    }
+
+    function zoomOut() {
+      const newZoom = Math.max(currentZoom - 0.5, MIN_ZOOM);
+      setZoom(newZoom);
+    }
+
+    async function capturePhoto(){
+      const captureButton = document.getElementById('captureBtn'); 
+      // Set the opacity to 0 prior to the canvas capture
+      captureButton.style.opacity = '0';
+      const overlay=document.getElementById('snapshot'),img=document.getElementById('snapshotImg');
+      const canvas=await html2canvas(document.getElementById('app'),{useCORS:true, scale: window.devicePixelRatio || 3});
+      img.src=canvas.toDataURL('image/png');
+      overlay.style.display='flex';
+      captureButton.style.opacity = '1';
+    }
+
+    async function fetchCountyName(url){
+      try{
+        const r=await fetch(url);
+        if(!r.ok)throw'';
+        const z=await r.json();
+        return z.properties?.name||url.split('/').pop();
+      }catch{return url.split('/').pop();}
+    }
+
+//TODO: Bug fix NWS Twitter handle formatting pull from dictonary of WFO IDs to handle. {OUN: @NWSNORMAN} stupid ass weather service
+    async function fetchNwsInfo(lat,lon,heading){
+      const info=document.getElementById('geoInfo');
+
+      try{
+        const r=await fetch(`https://api.weather.gov/points/${lat},${lon}`);
+        if(!r.ok)throw new Error(r.status);
+        const d=await r.json();
+        const city=d.properties.relativeLocation?.properties?.city||'Unknown';
+        const state=d.properties.relativeLocation?.properties?.state||'UNK';
+        const countyUrl=d.properties.county;
+        const county=countyUrl?await fetchCountyName(countyUrl):'Unknown';
+        const wfo=d.properties.cwa||'WFO';
+        tweetInfo={...tweetInfo,city,state,county,wfo:`${wfo}`,lat:lat.toFixed(3),lon:lon.toFixed(3),timestamp:new Date().toLocaleString(),heading};
+        info.textContent=`${tweetInfo.timestamp} | Lat: ${tweetInfo.lat}, Lon: ${tweetInfo.lon} | Near: ${city}, ${state} | ${county} County | WFO: ${wfo}`;
+
+        document.getElementById('locLat').textContent = lat.toFixed(3);
+        document.getElementById('locLon').textContent = lon.toFixed(3);
+        document.getElementById('locCity').textContent = city;
+        document.getElementById('locCounty').textContent = county;
+
+      }catch(e){
+        info.textContent='NWS fetch error';
+      }
+    }
+
+    function initMap(){
+      const map=L.map('map');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:9}).addTo(map);
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(async pos=>{
+          const {latitude:lat,longitude:lon,accuracy,heading}=pos.coords;
+          map.setView([lat,lon],9);
+          L.marker([lat,lon]).addTo(map);
+          if(accuracy)L.circle([lat,lon],{radius:accuracy,color:'#3388ff',weight:1}).addTo(map);
+          await fetchNwsInfo(lat,lon,heading);
+        },e=>alert('Geo error: '+e.message),{enableHighAccuracy:true,timeout:1e4});
+      }
+      map.zoomControl.remove();
+      map.scrollWheelZoom.disable();
+      map.doubleClickZoom.disable();
+      map.dragging.disable();
+    }
+
+    function setupMenus(){
+      const eventSel=document.getElementById('eventType'),
+            hailSel=document.getElementById('hailSizeSelector'),
+            hailSize=document.getElementById('hailSize'),
+            customHailInput=document.getElementById('customHailInput'),
+            customHailSize=document.getElementById('customHailSize');
+      function toggle(){
+        const e=eventSel.value;
+        tweetInfo.event=e;
+        hailSel.style.display=e==='Hail'?'block':'none';
+        if(e!=='Hail'){
+          tweetInfo.size='';
+          tweetInfo.customHailSize='';
+          hailSize.value='';
+          customHailSize.value='';
+          customHailInput.style.display='none';
+        }
+      }
+      function toggleCustomInput(){
+        const isOther=hailSize.value==='Other (>5.00″) Describe in User Remark';
+        customHailInput.style.display=isOther?'block':'none';
+        if(!isOther){
+          tweetInfo.customHailSize='';
+          customHailSize.value='';
+        }
+        tweetInfo.size=hailSize.value;
+      }
+      eventSel.addEventListener('change',toggle);toggle();
+      hailSize.addEventListener('change',toggleCustomInput);
+      customHailSize.addEventListener('input',()=>tweetInfo.customHailSize=customHailSize.value);
+      customHailSize.addEventListener('blur',()=>tweetInfo.customHailSize=customHailSize.value);
+    }
+
+    function getWFOHANDLE(WFO){
+      console.log('getting wfo X handle');
+      const wfo_handles= {
+
+        "ABQ": "NWSAlbuquerque",
+        "ABR": "NWSAberdeen",
+        "AFC": "NWSAnchorage",
+        "AMA": "NWSAmarillo",
+        "APX": "NWSGaylord",
+        "ARX": "NWSLaCrosse",
+        "BGM": "NWSBinghamton",
+        "BIS": "NWSBismarck",
+        "BOI": "NWSBoise",
+        "BOX": "NWSBoston",
+        "BTV": "NWSBurlington",
+        "BUF": "NWSBuffalo",
+        "BYZ": "NWSBillings",
+        "CAE": "NWSColumbiaSC",
+        "CAR": "NWSCaribou",
+        "CHS": "NWSCharlestonSC",
+        "CLE": "NWSCleveland",
+        "CRP": "NWSCorpus",
+        "CTP": "NWSStateCollege",
+        "DDC": "NWSDodgeCity",
+        "DLH": "NWSDuluth",
+        "DMX": "NWSDesMoines",
+        "DTX": "NWSDetroit",
+        "DVN": "NWSDavenport",
+        "EAX": "NWSPleasantHill",
+        "EPZ": "NWSElPaso",
+        "EWX": "NWSEWX",
+        "FGF": "NWSGrandForks",
+        "FGZ": "NWSFlagstaffAZ",
+        "FSD": "NWSFSiouxFalls",
+        "FWD": "NWSFortWorth",
+        "GID": "NWSHastings",
+        "GLD": "NWSGoodland",
+        "GRB": "NWSGreenBay",
+        "GRR": "NWSGrandRapids",
+        "GSP": "NWSGSP",
+        "GUM": "NWSGuam",
+        "HGX": "NWSHouston",
+        "HNX": "NWSSanJoaquinValley",
+        "HUN": "NWSHuntsville",
+        "ICT": "NWSSWichita",
+        "ILM": "NWSWilmingtonNC",
+        "ILN": "NWSILN",
+        "IND": "NWSIndianapolis",
+        "JAN": "NWSJacksonMS",
+        "JAX": "NWSJacksonville",
+        "JKL": "NWSJacksonKY",
+        "LBF": "NWSNorthPlatte",
+        "LCH": "NWSLakeCharles",
+        "LIX": "NWSNewOrleans",
+        "LKN": "NWSElko",
+        "LMK": "NWSLouisville",
+        "LOT": "NWSChicago",
+        "LOX": "NWSLosAngeles",
+        "LUB": "NWSLubbock",
+        "LWX": "NWSLWX",
+        "LZK": "NWSLittleRock",
+        "MAF": "NWSMidland",
+        "MEG": "NWSMemphis",
+        "MFL": "NWSMiamiFL",
+        "MHX": "NWSMoreheadCity",
+        "MKX": "NWSMilwaukee",
+        "MLB": "NWSMelbourneFL",
+        "MOB": "NWSMobile",
+        "MPX": "NWSTwinCities",
+        "MQT": "NWSMarquette",
+        "MRX": "NWSMorristownTN",
+        "MSO": "NWSMissoula",
+        "MTR": "NWSSanFrancisco",
+        "OUN": "NWSNorman",
+        "PAH": "NWSPaducah",
+        "PBZ": "NWSPittsburgh",
+        "PDT": "NWSPendleton",
+        "PHI": "NWSPhilly",
+        "PIH": "NWPocatello",
+        "PQR": "NWSPortland",
+        "PSR": "NWSPhoenix",
+        "PUB": "NWSPueblo",
+        "RAH": "NWSRaleigh",
+        "REV": "NWSReno",
+        "RIW": "NWSRiverton",
+        "RLX": "NWCharlestonWV",
+        "RNK": "NWSRNK",
+        "SGF": "NWSpringfield",
+        "SGX": "NWSSanDiego",
+        "SHV": "NWSShreveport",
+        "SJU": "NWSSanJuan",
+        "SLC": "NWSSaltLakeCity",
+        "STO": "NWSSacramento",
+        "TAE": "NWSTallahassee",
+        "TBW": "NWSTampaBay",
+        "TFX": "NWSThunder",
+        "TOP": "NWSTopeka",
+        "TSA": "NWSTulsa",
+        "VEF": "NWSVegas",
+        "WFO": "NWS",        // Fallback
+        "WPC": "NWSWPC",
+        "AKQ": "NWSWakefieldVA",
+        "GYX": "NWSGrayPortland",
+        "OKX": "NWSNewYorkNY",
+        "SEW": "NWSSeattleTacoma",
+        "SJT": "NWSSanAngelo",
+        "OTX": "NWSSpokane",
+        "GJT": "NWSGrandJunction"
+      }
+
+
+      const handle = wfo_handles[WFO];
+
+      return handle;
+    }
+
+    function openTweetPanel(){
+      const t=document.getElementById('tweetText');
+      let sizePart='';
+      if(tweetInfo.event==='Hail'&&tweetInfo.size){
+        if(tweetInfo.size==='Other (>5.00″) Describe in User Remark'&&tweetInfo.customHailSize){
+          sizePart=` (${tweetInfo.customHailSize})`;
+        }else{
+          sizePart=` (${tweetInfo.size})`;
+        }
+      }
+      const headingText=tweetInfo.heading!=null?` looking ${headingToCompass(tweetInfo.heading)}`:'';
+
+      handle = getWFOHANDLE(tweetInfo.wfo);
+      t.value=`@${handle} ${tweetInfo.event}${sizePart} reported near ${tweetInfo.city}, ${tweetInfo.state} ${tweetInfo.county} County (Lat ${tweetInfo.lat}, Lon ${tweetInfo.lon}) at ${tweetInfo.timestamp}.${headingText} #${tweetInfo.state}wx // generated by Report Buddy: ${Version_ID}`;
+      document.getElementById('tweetPanel').classList.add('open');
+      isPanelOpen = true;
+      console.log('opend tweet panel');
+    }
+
+//    function closeTweetPanel(){
+//      document.getElementById('tweetPanel').classList.remove('open');
+//    }
+
+
+
+//    function openLocationPanel(){
+//      const t=document.getElementById('tweetText');
+//      document.getElementById('tweetPanel').classList.add('open');
+//    }
+
+/*
+    let touchStartX=null;
+    document.addEventListener('touchstart',e=>touchStartX=e.changedTouches[0].clientX);
+    document.addEventListener('touchend',e=>{
+      if(touchStartX==null)return;
+      const dx=e.changedTouches[0].clientX-touchStartX;
+      if(dx<-100)openTweetPanel();
+      if(dx>100)closeTweetPanel();
+      //if(dx>120)openLocationPanel();
+      touchStartX=null;
+    });
+
+*/
+
+/*
+    function openTweetPanel() {
+      closeLocationPanel();
+      document.getElementById('tweetPanel').classList.add('open');
+      isPanelOpen = true;
+    }
+*/
+    function closeTweetPanel() {
+      document.getElementById('tweetPanel').classList.remove('open');
+      isPanelOpen = false;
+      console.log('closed tweet panel');
+    }
+
+    function openLocationPanel() {
+
+    const wfo_phones = {
+      "ABQ": "505-325-3816",
+      "AMA": "806-354-2278",
+      "BMX": "205-664-3010",
+      "HUN": "256-890-8503",
+      "MOB": "251-633-6443",
+      "LZK": "501-834-0308",
+      "JAX": "904-741-4370",
+      "KEY": "305-295-1316",
+      "MLB": "321-255-2900",
+      "MFL": "305-229-4550",
+      "TAE": "850-942-8851",
+      "TBW": "813-645-2506",
+      "BMX": "205-664-3010",
+      "LCH": "337-439-0000",
+      "LIX": "504-522-7330",
+      "SHV": "318-635-7575",
+      "JAN": "601-936-2189",
+      "OUN": "405-325-3816",
+      "TSA": "918-743-3311",
+      "SJU": "787-253-0855",
+      "MRX": "423-586-3771",
+      "MEM": "901-544-0408",
+      "OHX": "615-754-4633",
+      "BRO": "956-504-1432",
+      "CRP": "361-289-0753",
+      "FWD": "817-429-2631",
+      "EPZ": "505-589-4088",
+      "HGX": "281-337-5074",
+      "LUB": "806-748-1071",
+      "MAF": "432-563-9292",
+      "SJT": "325-949-8586",
+      "FGZ": "928-774-3301",
+      "PSR": "602-275-0073",
+      "TWC": "520-881-3333",
+      "EKA": "707-443-7062",
+      "LOX": "805-988-6610",
+      "STO": "916-979-3051",
+      "SGX": "858-675-8706",
+      "BOI": "208-342-6569",
+      "PIH": "208-233-0137",
+      "BYZ": "406-652-1916",
+      "GGW": "406-228-9625",
+      "TFX": "406-453-5469",
+      "MSO": "406-721-3939",
+      "LKN": "775-738-3018",
+      "VEF": "702-263-9744",
+      "REV": "775-673-8130",
+      "MFR": "541-779-5990",
+      "PDT": "541-276-0103",
+      "PQR": "503-261-9246",
+      "SLC": "801-524-3057",
+      "SEW": "206-526-6087",
+      "OTX": "360-357-5291" /* approximate */
+    }
+
+    const wfo_phone_number=wfo_phones[tweetInfo.wfo];
+    const handle = getWFOHANDLE(tweetInfo.wfo);
+
+
+
+      document.getElementById('locationMapPanel').classList.add('open');
+      isPanelOpen = true;
+
+      // Fill location details
+      document.getElementById('locLat').textContent = tweetInfo.lat || '--';
+      document.getElementById('locLon').textContent = tweetInfo.lon || '--';
+      document.getElementById('locCity').textContent = tweetInfo.city || '--';
+      document.getElementById('locState').textContent = tweetInfo.state || '--';
+      document.getElementById('locCounty').textContent = tweetInfo.county || '--';
+      //console.log(tweetInfo.wfo);
+      document.getElementById('locWFO').textContent = tweetInfo.wfo || '--';
+      document.getElementById('locWFOHandle').textContent = `@${handle}` || '--';
+      document.getElementById('locWFOPhone').textContent = wfo_phone_number || '--';
+
+
+      // Init or update map view
+      initLocationMap(tweetInfo.lat, tweetInfo.lon);
+    }
+
+
+    function closeLocationPanel() {
+      document.getElementById('locationMapPanel').classList.remove('open');
+      isPanelOpen = false;
+    }
+
+    // Swipe detection
+    document.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].clientX;
+    });
+
+    document.addEventListener('touchend', e => {
+      if (touchStartX === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+
+      if (dx < -100 && !isPanelOpen) {
+        openTweetPanel();
+      } else if (dx > 100 && !isPanelOpen) {
+        openLocationPanel();
+      } else if (dx > 100 && document.getElementById('tweetPanel').classList.contains('open')) {
+        // Right swipe while tweet panel is open should close it
+        closeTweetPanel();
+      } else if (dx < -100 && document.getElementById('locationMapPanel').classList.contains('open')) {
+        // Left swipe while location panel is open should close it
+        closeLocationPanel();
+      }
+
+      touchStartX = null;
+    });
+
+
+
+    let locationMap;
+    let countyLayer=null;
+
+    function initLocationMap(lat = 38.0, lon = -97.0) {
+      if (locationMap) {
+        locationMap.setView([lat, lon], 9);
+        return;
+      }
+
+      locationMap = L.map('locationMap');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 14,
+        minZoom: 4
+      }).addTo(locationMap);
+      locationMap.setView([lat, lon], 8);
+      L.marker([lat, lon]).addTo(locationMap);
+
+      fetch("https://raw.githubusercontent.com/plotly/datasets/master/geojson-counties-fips.json")
+        .then(response => {
+          if (!response.ok) throw new Error("Failed to load county GeoJSON");
+          return response.json();
+        })
+        .then(countyData => {
+          countyLayer = L.geoJSON(countyData, {
+            style: {
+              color: "#300000",
+              weight: 0.7,
+              fillOpacity: 0,
+              dashArray: '12,12'
+            }
+          }).addTo(locationMap); // make sure `map` is globally accessible
+        })
+        .catch(error => {
+          console.error("Error loading county data:", error);
+        });
+
+    fetch("https://mapservices.weather.noaa.gov/static/rest/services/nws_reference_maps/nws_reference_map/FeatureServer/1/query?where=1=1&outFields=*&f=geojson")
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load CWA GeoJSON");
+        return res.json();
+      })
+      .then(cwaData => {
+        const cwaLayer = L.geoJSON(cwaData, {
+          style: feature => ({
+            color: "#800080",       // purple outline
+            weight: 5,
+            fill: false,
+          })
+        }).addTo(locationMap);
+      })
+      .catch(err => console.error("Error loading CWA boundaries:", err));
+
+
+
+    }
+
+
+    window.addEventListener('load',()=>{
+      startCamera();
+      initMap();
+      setupMenus();
+      document.getElementById('captureBtn').addEventListener('click',capturePhoto);
+      document.getElementById('closeSnap').addEventListener('click',()=>document.getElementById('snapshot').style.display='none');
+      document.getElementById('zoomIn').addEventListener('click',zoomIn);
+      document.getElementById('zoomOut').addEventListener('click',zoomOut);
+    });
+  </script>
+</body>
+</html>
