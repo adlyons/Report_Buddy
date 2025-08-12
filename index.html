@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Report Buddy V0.8</title>
+  <title>Report Buddy V0.5</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
@@ -203,7 +203,7 @@
       <button id="zoomIn">+</button>
     </div>
     <div id="geoInfo">Locating…</div>
-    <div id="reportbuddy">Report Buddy v0.8</div>
+    <div id="reportbuddy">Report Buddy v0.5</div>
 
     <div id="eventSelector">
       <label for="eventType"></label>
@@ -361,7 +361,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
 
-    const Version_ID ='V0.8';
+    const Version_ID ='V0.5';
 
     let touchStartX = null;
     let isPanelOpen = false;
@@ -457,19 +457,29 @@
       const eventSelector = document.getElementById('eventSelector');
       const howToReportBtn = document.getElementById('howToReportBtn');
       const eventType = document.getElementById('eventType');
+      const customHailInput = document.getElementById('customHailInput');
+      const damageInput = document.getElementById('damageInput');
       
       // Hide elements before capture
       captureButton.style.opacity = '0';
       howToReportBtn.style.display = 'none';
       
-      // Hide "Select Report Type" option if it's selected
+      // Store original display states
       const originalDisplay = eventSelector.style.display;
+      const originalHailDisplay = customHailInput.style.display;
+      const originalDamageDisplay = damageInput.style.display;
+      
+      // Hide "Select Report Type" option if it's selected
       if (eventType.value === '') {
         eventSelector.style.display = 'none';
       } else {
         // Also hide the selector even if a type is selected
         eventSelector.style.display = 'none';
       }
+      
+      // Hide custom input fields
+      customHailInput.style.display = 'none';
+      damageInput.style.display = 'none';
       
       const overlay=document.getElementById('snapshot'),img=document.getElementById('snapshotImg');
       const canvas=await html2canvas(document.getElementById('app'),{useCORS:true, scale: window.devicePixelRatio || 3});
@@ -485,6 +495,8 @@
       captureButton.style.opacity = '1';
       eventSelector.style.display = originalDisplay;
       howToReportBtn.style.display = 'block';
+      customHailInput.style.display = originalHailDisplay;
+      damageInput.style.display = originalDamageDisplay;
     }
 
     async function fetchCountyName(url){
@@ -585,72 +597,54 @@
     function getWFOHANDLE(WFO){
       console.log('getting wfo X handle');
       const wfo_handles= {
-//some of these are not correct. Need to fix checked with grok 8/10/2025
-      
+
         "ABQ": "NWSAlbuquerque",
         "ABR": "NWSAberdeen",
         "AFC": "NWSAnchorage",
-        "AFG": "NWSFairbanks",
-        "AJK": "NWSJuneau",
-        "AKQ": "NWSWakefieldVA",
-        "ALY": "NWSAlbany",
         "AMA": "NWSAmarillo",
         "APX": "NWSGaylord",
         "ARX": "NWSLaCrosse",
         "BGM": "NWSBinghamton",
         "BIS": "NWSBismarck",
-        "BMX": "NWSBirmingham",
         "BOI": "NWSBoise",
-        "BOU": "NWSBoulder",
         "BOX": "NWSBoston",
-        "BRO": "NWSBrownsville",
         "BTV": "NWSBurlington",
         "BUF": "NWSBuffalo",
         "BYZ": "NWSBillings",
         "CAE": "NWSColumbia",
         "CAR": "NWSCaribou",
         "CHS": "NWSCharlestonSC",
-        "CLE": "NWSCLE",
+        "CLE": "NWSCleveland",
         "CRP": "NWSCorpus",
         "CTP": "NWSStateCollege",
-        "CYS": "NWSCheyenne",
         "DDC": "NWSDodgeCity",
         "DLH": "NWSDuluth",
         "DMX": "NWSDesMoines",
         "DTX": "NWSDetroit",
-        "DVN": "NWSQuadCities",
+        "DVN": "NWSDavenport",
         "EAX": "NWSKansasCity",
-        "EKA": "NWSEureka",
         "EPZ": "NWSElPaso",
         "EWX": "NWSSanAntonio",
-        "FFC": "NWSAtlanta",
         "FGF": "NWSGrandForks",
         "FGZ": "NWSFlagstaff",
-        "FSD": "NWSSiouxFalls",
+        "FSD": "NWSFSiouxFalls",
         "FWD": "NWSFortWorth",
-        "GGW": "NWSGlasgow",
         "GID": "NWSHastings",
-        "GJT": "NWSGrandJunction",
         "GLD": "NWSGoodland",
         "GRB": "NWSGreenBay",
         "GRR": "NWSGrandRapids",
         "GSP": "NWSGSP",
         "GUM": "NWSGuam",
-        "GYX": "NWSGray",
-        "HFO": "NWSHonolulu",
         "HGX": "NWSHouston",
         "HNX": "NWSHanford",
         "HUN": "NWSHuntsville",
         "ICT": "NWSWichita",
         "ILM": "NWSWilmingtonNC",
         "ILN": "NWSILN",
-        "ILX": "NWSLincolnIL",
         "IND": "NWSIndianapolis",
-        "IWX": "NWSIWX",
         "JAN": "NWSJacksonMS",
         "JAX": "NWSJacksonville",
         "JKL": "NWSJacksonKY",
-        "KEY": "NWSKeyWest",
         "LBF": "NWSNorthPlatte",
         "LCH": "NWSLakeCharles",
         "LIX": "NWSNewOrleans",
@@ -658,14 +652,12 @@
         "LMK": "NWSLouisville",
         "LOT": "NWSChicago",
         "LOX": "NWSLosAngeles",
-        "LSX": "NWSStLouis",
         "LUB": "NWSLubbock",
         "LWX": "NWS_BaltWash",
         "LZK": "NWSLittleRock",
         "MAF": "NWSMidland",
         "MEG": "NWSMemphis",
         "MFL": "NWSMiami",
-        "MFR": "NWSMedford",
         "MHX": "NWSMoreheadCity",
         "MKX": "NWSMilwaukee",
         "MLB": "NWSMelbourne",
@@ -674,11 +666,7 @@
         "MQT": "NWSMarquette",
         "MRX": "NWSMorristown",
         "MSO": "NWSMissoula",
-        "MTR": "NWSBayArea",
-        "OAX": "NWSOmaha",
-        "OHX": "NWSNashville",
-        "OKX": "NWSNewYorkNY",
-        "OTX": "NWSSpokane",
+        "MTR": "NWSSanFrancisco",
         "OUN": "NWSNorman",
         "PAH": "NWSPaducah",
         "PBZ": "NWSPittsburgh",
@@ -693,11 +681,9 @@
         "RIW": "NWSRiverton",
         "RLX": "NWSCharlestonWV",
         "RNK": "NWSBlacksburg",
-        "SEW": "NWSSeattle",
-        "SGF": "NWSSpringfield",
+        "SGF": "NWSpringfield",
         "SGX": "NWSSanDiego",
         "SHV": "NWSShreveport",
-        "SJT": "NWSSanAngelo",
         "SJU": "NWSSanJuan",
         "SLC": "NWSSaltLakeCity",
         "STO": "NWSSacramento",
@@ -706,10 +692,15 @@
         "TFX": "NWSGreatFalls",
         "TOP": "NWSTopeka",
         "TSA": "NWSTulsa",
-        "TWC": "NWSTucson",
-        "UNR": "NWSRapidCity",
         "VEF": "NWSVegas",
-        "PPG": "NWSPagoPago"
+        "WFO": "NWS",        // Fallback
+        "AKQ": "NWSWakefieldVA",
+        "GYX": "NWSGray",
+        "OKX": "NWSNewYorkNY",
+        "SEW": "NWSSeattle",
+        "SJT": "NWSSanAngelo",
+        "OTX": "NWSSpokane",
+        "GJT": "NWSGrandJunction"
       }
 
 
