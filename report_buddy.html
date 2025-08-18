@@ -457,19 +457,29 @@
       const eventSelector = document.getElementById('eventSelector');
       const howToReportBtn = document.getElementById('howToReportBtn');
       const eventType = document.getElementById('eventType');
+      const customHailInput = document.getElementById('customHailInput');
+      const damageInput = document.getElementById('damageInput');
       
       // Hide elements before capture
       captureButton.style.opacity = '0';
       howToReportBtn.style.display = 'none';
       
-      // Hide "Select Report Type" option if it's selected
+      // Store original display states
       const originalDisplay = eventSelector.style.display;
+      const originalHailDisplay = customHailInput.style.display;
+      const originalDamageDisplay = damageInput.style.display;
+      
+      // Hide "Select Report Type" option if it's selected
       if (eventType.value === '') {
         eventSelector.style.display = 'none';
       } else {
         // Also hide the selector even if a type is selected
         eventSelector.style.display = 'none';
       }
+      
+      // Hide custom input fields
+      customHailInput.style.display = 'none';
+      damageInput.style.display = 'none';
       
       const overlay=document.getElementById('snapshot'),img=document.getElementById('snapshotImg');
       const canvas=await html2canvas(document.getElementById('app'),{useCORS:true, scale: window.devicePixelRatio || 3});
@@ -485,6 +495,8 @@
       captureButton.style.opacity = '1';
       eventSelector.style.display = originalDisplay;
       howToReportBtn.style.display = 'block';
+      customHailInput.style.display = originalHailDisplay;
+      damageInput.style.display = originalDamageDisplay;
     }
 
     async function fetchCountyName(url){
@@ -599,7 +611,7 @@
         "BTV": "NWSBurlington",
         "BUF": "NWSBuffalo",
         "BYZ": "NWSBillings",
-        "CAE": "NWSColumbiaSC",
+        "CAE": "NWSColumbia",
         "CAR": "NWSCaribou",
         "CHS": "NWSCharlestonSC",
         "CLE": "NWSCleveland",
@@ -612,9 +624,9 @@
         "DVN": "NWSDavenport",
         "EAX": "NWSKansasCity",
         "EPZ": "NWSElPaso",
-        "EWX": "NWSEWX",
+        "EWX": "NWSSanAntonio",
         "FGF": "NWSGrandForks",
-        "FGZ": "NWSFlagstaffAZ",
+        "FGZ": "NWSFlagstaff",
         "FSD": "NWSFSiouxFalls",
         "FWD": "NWSFortWorth",
         "GID": "NWSHastings",
@@ -624,9 +636,9 @@
         "GSP": "NWSGSP",
         "GUM": "NWSGuam",
         "HGX": "NWSHouston",
-        "HNX": "NWSSanJoaquinValley",
+        "HNX": "NWSHanford",
         "HUN": "NWSHuntsville",
-        "ICT": "NWSSWichita",
+        "ICT": "NWSWichita",
         "ILM": "NWSWilmingtonNC",
         "ILN": "NWSILN",
         "IND": "NWSIndianapolis",
@@ -641,34 +653,34 @@
         "LOT": "NWSChicago",
         "LOX": "NWSLosAngeles",
         "LUB": "NWSLubbock",
-        "LWX": "NWSLWX",
+        "LWX": "NWS_BaltWash",
         "LZK": "NWSLittleRock",
         "MAF": "NWSMidland",
         "MEG": "NWSMemphis",
-        "MFL": "NWSMiamiFL",
+        "MFL": "NWSMiami",
         "MHX": "NWSMoreheadCity",
         "MKX": "NWSMilwaukee",
-        "MLB": "NWSMelbourneFL",
+        "MLB": "NWSMelbourne",
         "MOB": "NWSMobile",
         "MPX": "NWSTwinCities",
         "MQT": "NWSMarquette",
-        "MRX": "NWSMorristownTN",
+        "MRX": "NWSMorristown",
         "MSO": "NWSMissoula",
         "MTR": "NWSSanFrancisco",
         "OUN": "NWSNorman",
         "PAH": "NWSPaducah",
         "PBZ": "NWSPittsburgh",
         "PDT": "NWSPendleton",
-        "PHI": "NWSPhilly",
-        "PIH": "NWPocatello",
+        "PHI": "NWS_MountHolly",
+        "PIH": "NWSPocatello",
         "PQR": "NWSPortland",
         "PSR": "NWSPhoenix",
         "PUB": "NWSPueblo",
         "RAH": "NWSRaleigh",
         "REV": "NWSReno",
         "RIW": "NWSRiverton",
-        "RLX": "NWCharlestonWV",
-        "RNK": "NWSRNK",
+        "RLX": "NWSCharlestonWV",
+        "RNK": "NWSBlacksburg",
         "SGF": "NWSpringfield",
         "SGX": "NWSSanDiego",
         "SHV": "NWSShreveport",
@@ -677,16 +689,15 @@
         "STO": "NWSSacramento",
         "TAE": "NWSTallahassee",
         "TBW": "NWSTampaBay",
-        "TFX": "NWSThunder",
+        "TFX": "NWSGreatFalls",
         "TOP": "NWSTopeka",
         "TSA": "NWSTulsa",
         "VEF": "NWSVegas",
         "WFO": "NWS",        // Fallback
-        "WPC": "NWSWPC",
         "AKQ": "NWSWakefieldVA",
-        "GYX": "NWSGrayPortland",
+        "GYX": "NWSGray",
         "OKX": "NWSNewYorkNY",
-        "SEW": "NWSSeattleTacoma",
+        "SEW": "NWSSeattle",
         "SJT": "NWSSanAngelo",
         "OTX": "NWSSpokane",
         "GJT": "NWSGrandJunction"
